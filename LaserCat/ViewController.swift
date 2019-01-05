@@ -76,6 +76,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         if gestureRecognizer.state == .ended {
             shootLaser()
+            checkPoints()
         }
     }
     
@@ -215,7 +216,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         let cylinder = SCNCylinder(radius: 0.01, height: CGFloat(laserLength))
         cylinder.radialSegmentCount = 8
         let node = SCNNode(geometry: cylinder)
-        let nodeRotation = simd_float3x3(columns: (laserOrientation.columns.1, laserOrientation.columns.2, laserOrientation.columns.0))
+        let nodeRotation = simd_float3x3(columns: (laserOrientation.columns.1, laserOrientation.columns.2, laserOrientation.columns.0)) // change this to be more transparent
         node.transform = SCNMatrix4.init(getTransform(laserMidPoint, nodeRotation))
         node.name = "laser"
         
@@ -299,5 +300,35 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         transform.columns.3[2] = position.z
         
         return transform
+    }
+    
+    private func checkPoints() {
+        guard let frame = sceneView.session.currentFrame else { return }
+        
+        guard let rawPoints = frame.rawFeaturePoints else { return }
+        
+        print("Points Count: ", rawPoints.points.count)
+        
+        var status = ""
+        switch frame.worldMappingStatus {
+        case .notAvailable:
+            status = "not available"
+        case .limited:
+            status = "limited"
+        case .extending:
+            status = "extending"
+        case .mapped:
+            status = "mapped"
+        default:
+            status = "unknown"
+        }
+        
+        print("World mapping status is ", status)
+        
+        sceneView.session.getCurrentWorldMap { worldMap, error in
+            guard let map = worldMap else { return }
+            
+            print("Total Points: ", map.rawFeaturePoints.points.count)
+        }
     }
 }
