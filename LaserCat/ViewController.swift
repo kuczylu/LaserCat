@@ -9,6 +9,7 @@
 import UIKit
 import SceneKit
 import ARKit
+import AVFoundation
 
 class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
@@ -70,6 +71,13 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         valueLabelTilt.text = String(format: "%.1f", offsetTilt)
     }
     
+    @IBAction func tapView(_ gestureRecognizer : UITapGestureRecognizer) {
+        guard gestureRecognizer.view != nil else { return }
+        
+        if gestureRecognizer.state == .ended {
+            shootLaser()
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -80,7 +88,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         // Set the view's delegate
         sceneView.delegate = self
-        sceneView.debugOptions = [.showFeaturePoints]
+        sceneView.debugOptions = [.showFeaturePoints, .showWorldOrigin]
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -168,8 +176,128 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         sessionInfoView.isHidden = message.isEmpty
     }
 
+    
     private func resetTracking() {
         let configuration = ARWorldTrackingConfiguration()
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        
+        // remove laser nodes
+        while let node = sceneView.scene.rootNode.childNode(withName: "laser", recursively: false) {
+            node.removeFromParentNode()
+        }
+    }
+    
+    
+    private func shootLaser() {
+        
+        guard let frame = sceneView.session.currentFrame else { return }
+
+        // get camera position and orientation w.r.t world coordinate system
+        let transform = frame.camera.transform
+        let devicePosition = getPosition(transform)
+        let deviceOrientation = getRotation(transform)
+        
+        // offset is specified in the device reference frame in meters
+        // offset must be rotated into the world refrence frame before being added to the device position
+        let offset = simd_float3(x: Float(0.01 * offsetX), y: Float(0.01 * offsetY), z: Float(0.01 * offsetZ))
+        let laserPosition = devicePosition + deviceOrientation * offset
+        
+        // offset is specified in the device reference frame in degrees
+        let anglesOffset = simd_float3(Float(offsetTilt), Float(offsetPan), 0.0)
+        let offsetRotation = getMatrixFromAngles(anglesOffset, "YXZ")
+        let laserOrientation = deviceOrientation * offsetRotation.transpose
+        
+        let laserFwd : simd_float3 = -laserOrientation.columns.2
+        let laserLength : Float = 2.0 //meters
+        let laserMidPoint = laserPosition + (laserLength / 2.0) * laserFwd
+        
+        
+        let cylinder = SCNCylinder(radius: 0.01, height: CGFloat(laserLength))
+        cylinder.radialSegmentCount = 8
+        let node = SCNNode(geometry: cylinder)
+        let nodeRotation = simd_float3x3(columns: (laserOrientation.columns.1, laserOrientation.columns.2, laserOrientation.columns.0))
+        node.transform = SCNMatrix4.init(getTransform(laserMidPoint, nodeRotation))
+        node.name = "laser"
+        
+        sceneView.scene.rootNode.addChildNode(node)
+        //let systemSoundID: SystemSoundID = 1016
+        //AudioServicesPlaySystemSound(systemSoundID)
+    }
+    
+    
+    private func getRotation(_ transform: simd_float4x4) -> simd_float3x3 {
+        let rotRow0 = simd_float3(x: transform.columns.0[0], y: transform.columns.1[0], z: transform.columns.2[0])
+        let rotRow1 = simd_float3(x: transform.columns.0[1], y: transform.columns.1[1], z: transform.columns.2[1])
+        let rotRow2 = simd_float3(x: transform.columns.0[2], y: transform.columns.1[2], z: transform.columns.2[2])
+        let deviceOrientation = simd_float3x3(rows: [rotRow0, rotRow1, rotRow2])
+        
+        return deviceOrientation
+    }
+    
+    
+    private func getPosition(_ transform: simd_float4x4) -> simd_float3 {
+        let devicePosition = simd_float3(x: transform.columns.3[0], y: transform.columns.3[1], z: transform.columns.3[2])
+        
+        return devicePosition
+    }
+    
+    
+    private func getMatrixFromAngles(_ angles: simd_float3, _ order: String) -> simd_float3x3 {
+        
+        var matrix = simd_float3x3(1.0)
+        let anglesRad = degToRad(angles)
+        
+        let rotX = simd_float3x3(rows: [float3(1.0, 0.0, 0.0),
+                                        float3(0.0, cos(anglesRad.x), -sin(anglesRad.x)),
+                                        float3(0.0, sin(anglesRad.x), cos(anglesRad.x))])
+        
+        let rotY = simd_float3x3(rows: [float3(cos(anglesRad.y), 0.0, sin(anglesRad.y)),
+                                        float3(0.0, 1.0, 0.0),
+                                        float3(-sin(anglesRad.y), 0.0, cos(anglesRad.y))])
+        
+        let rotZ = simd_float3x3(rows: [float3(cos(anglesRad.z), -sin(anglesRad.z), 0.0),
+                                        float3(sin(anglesRad.z), cos(anglesRad.z), 0.0),
+                                        float3(0.0, 0.0, 1.0),])
+        
+        if(order == "YXZ")
+        {
+            matrix = rotZ * rotX * rotY
+        }
+        
+        return matrix
+    }
+    
+    
+    private func radToDeg(_ vec: simd_float3) -> simd_float3 {
+        return (180.0 / .pi) * vec
+    }
+    
+    
+    private func degToRad(_ vec: simd_float3) -> simd_float3 {
+        return (.pi / 180.0) * vec
+    }
+    
+    
+    private func getTransform(_ position: simd_float3, _ rotation: simd_float3x3) -> simd_float4x4 {
+        var transform = simd_float4x4(1.0)
+        
+        transform.columns.0[0] = rotation.columns.0[0]
+        transform.columns.0[1] = rotation.columns.0[1]
+        transform.columns.0[2] = rotation.columns.0[2]
+        
+        transform.columns.1[0] = rotation.columns.1[0]
+        transform.columns.1[1] = rotation.columns.1[1]
+        transform.columns.1[2] = rotation.columns.1[2]
+        
+        transform.columns.2[0] = rotation.columns.2[0]
+        transform.columns.2[1] = rotation.columns.2[1]
+        transform.columns.2[2] = rotation.columns.2[2]
+
+        
+        transform.columns.3[0] = position.x
+        transform.columns.3[1] = position.y
+        transform.columns.3[2] = position.z
+        
+        return transform
     }
 }

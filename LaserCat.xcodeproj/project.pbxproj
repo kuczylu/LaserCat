@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6CA3370221E0213B00D1D4DB /* assets.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = 6CA3370121E0213B00D1D4DB /* assets.scnassets */; };
 		6CB06ABF21DE903F003F1D8A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB06ABE21DE903F003F1D8A /* AppDelegate.swift */; };
 		6CB06AC321DE903F003F1D8A /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB06AC221DE903F003F1D8A /* ViewController.swift */; };
 		6CB06AC621DE903F003F1D8A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6CB06AC421DE903F003F1D8A /* Main.storyboard */; };
@@ -15,6 +16,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		6CA3370121E0213B00D1D4DB /* assets.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = assets.scnassets; sourceTree = "<group>"; };
 		6CB06ABB21DE903F003F1D8A /* LaserCat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LaserCat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6CB06ABE21DE903F003F1D8A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6CB06AC221DE903F003F1D8A /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -56,6 +58,7 @@
 			children = (
 				6CB06ABE21DE903F003F1D8A /* AppDelegate.swift */,
 				6CB06AC221DE903F003F1D8A /* ViewController.swift */,
+				6CA3370121E0213B00D1D4DB /* assets.scnassets */,
 				6CB06AC421DE903F003F1D8A /* Main.storyboard */,
 				6CB06AC721DE9040003F1D8A /* Assets.xcassets */,
 				6CB06AC921DE9040003F1D8A /* LaunchScreen.storyboard */,
@@ -122,6 +125,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6CA3370221E0213B00D1D4DB /* assets.scnassets in Resources */,
 				6CB06ACB21DE9040003F1D8A /* LaunchScreen.storyboard in Resources */,
 				6CB06AC821DE9040003F1D8A /* Assets.xcassets in Resources */,
 				6CB06AC621DE903F003F1D8A /* Main.storyboard in Resources */,
