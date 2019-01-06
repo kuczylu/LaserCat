@@ -11,6 +11,7 @@ import SceneKit
 import ARKit
 import AVFoundation
 
+
 class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     var offsetX = 0.0
@@ -75,8 +76,9 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         guard gestureRecognizer.view != nil else { return }
         
         if gestureRecognizer.state == .ended {
-            shootLaser()
-            checkPoints()
+            hitTest()
+            //shootLaser()
+            //checkPoints()
         }
     }
     
@@ -237,9 +239,9 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     
     private func getPosition(_ transform: simd_float4x4) -> simd_float3 {
-        let devicePosition = simd_float3(x: transform.columns.3[0], y: transform.columns.3[1], z: transform.columns.3[2])
+        let position = simd_float3(x: transform.columns.3[0], y: transform.columns.3[1], z: transform.columns.3[2])
         
-        return devicePosition
+        return position
     }
     
     
@@ -330,5 +332,42 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
             
             print("Total Points: ", map.rawFeaturePoints.points.count)
         }
+    }
+    
+    private func hitTest() {
+        guard let frame = sceneView.session.currentFrame else { return }
+        
+        let result = frame.hitTest(CGPoint(x: 0.5, y: 0.5), types: [.featurePoint, .estimatedHorizontalPlane, .estimatedHorizontalPlane])
+        
+        print("HIT TEST:")
+        guard let firstResult = result.first else {
+            print("### NO RESULT")
+            return
+        }
+
+        var type = ""
+        switch firstResult.type {
+        case .featurePoint:
+            type = "feature point"
+        case .estimatedHorizontalPlane:
+            type = "estimated horizontal plane"
+        case .estimatedVerticalPlane:
+            type = "estimated vertical plane"
+        default:
+            type = "no type info"
+        }
+        
+        print("    distance: ", firstResult.distance)
+        print("        type: ", type)
+        
+        let transform = frame.camera.transform
+        let nodeRotation = getRotation(transform) // change this to be more transparent
+        let nodePosition = getPosition(firstResult.worldTransform)
+        
+        let node = CatNode()
+        node.transform = SCNMatrix4.init(getTransform(nodePosition, nodeRotation))
+        node.name = "cat"
+        
+        sceneView.scene.rootNode.addChildNode(node)
     }
 }
