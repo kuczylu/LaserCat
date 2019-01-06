@@ -334,6 +334,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         }
     }
     
+    
     private func hitTest() {
         guard let frame = sceneView.session.currentFrame else { return }
         
