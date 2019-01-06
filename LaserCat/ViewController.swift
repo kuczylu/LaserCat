@@ -76,7 +76,8 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         guard gestureRecognizer.view != nil else { return }
         
         if gestureRecognizer.state == .ended {
-            hitTest()
+            shootCatLaser()
+            //hitTest()
             //shootLaser()
             //checkPoints()
         }
@@ -223,6 +224,64 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         node.name = "laser"
         
         sceneView.scene.rootNode.addChildNode(node)
+        //let systemSoundID: SystemSoundID = 1016
+        //AudioServicesPlaySystemSound(systemSoundID)
+    }
+    
+    
+    private func shootCatLaser() {
+        
+        guard let frame = sceneView.session.currentFrame else { return }
+        
+        // get camera position and orientation w.r.t world coordinate system
+        let transform = frame.camera.transform
+        let devicePosition = getPosition(transform)
+        let deviceOrientation = getRotation(transform)
+        
+        // offset is specified in the device reference frame in meters
+        // offset must be rotated into the world refrence frame before being added to the device position
+        let offset = simd_float3(x: Float(0.01 * offsetX), y: Float(0.01 * offsetY), z: Float(0.01 * offsetZ))
+        let laserPosition = devicePosition + deviceOrientation * offset
+        
+        // offset is specified in the device reference frame in degrees
+        let anglesOffset = simd_float3(Float(offsetTilt), Float(offsetPan), 0.0)
+        let offsetRotation = getMatrixFromAngles(anglesOffset, "YXZ")
+        let laserOrientation = deviceOrientation * offsetRotation.transpose
+        
+        let laserOrientationInv = laserOrientation.transpose
+        
+        //let laserFwd : simd_float3 = -laserOrientation.columns.2
+        
+        sceneView.session.getCurrentWorldMap { worldMap, error in
+            guard let map = worldMap else { return }
+            
+            let minimumRadius: Float = 0.05 // meters
+            var zMax: Float = -Float.greatestFiniteMagnitude // negative z is forward on laser, smallest z is furthest
+            var nodePosition = simd_float3(0.0, 0.0, 0.0)
+            var hasSurface = false
+            
+            
+            for point in map.rawFeaturePoints.points {
+                let pointNew = laserOrientationInv * (point - laserPosition)
+                if (abs(pointNew.x) < minimumRadius) && (abs(pointNew.y) < minimumRadius)
+                {
+                    // check only points with negtive z, i.e points in front of the laser
+                    if (pointNew.z < 0.0) && (pointNew.z > zMax) {
+                        zMax = pointNew.z
+                        nodePosition = point
+                        hasSurface = true
+                    }
+                }
+            }
+            
+            if(hasSurface) {
+                let node = CatNode()
+                node.transform = SCNMatrix4.init(self.getTransform(nodePosition, laserOrientation))
+                node.name = "cat"
+                self.sceneView.scene.rootNode.addChildNode(node)
+            }
+        }
+        
         //let systemSoundID: SystemSoundID = 1016
         //AudioServicesPlaySystemSound(systemSoundID)
     }
