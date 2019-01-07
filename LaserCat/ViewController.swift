@@ -29,6 +29,12 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     @IBOutlet weak var valueLabelZ: UILabel!
     @IBOutlet weak var valueLabelPan: UILabel!
     @IBOutlet weak var valueLabelTilt: UILabel!
+    @IBOutlet weak var stepperX: UIStepper!
+    @IBOutlet weak var stepperY: UIStepper!
+    @IBOutlet weak var stepperZ: UIStepper!
+    @IBOutlet weak var stepperPan: UIStepper!
+    @IBOutlet weak var stepperTilt: UIStepper!
+    
     
     
     @IBAction func toggleValuesButtonClicked(_ sender: UIButton) {
@@ -42,9 +48,28 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         }
     }
     
-    
     @IBAction func resetButtonClicked() {
         resetTracking()
+    }
+    
+    @IBAction func clearButtonClicked() {
+        offsetX = 0.0
+        offsetY = 0.0
+        offsetZ = 0.0
+        offsetPan = 0.0
+        offsetTilt = 0.0
+        
+        stepperX.value = offsetX
+        stepperY.value = offsetY
+        stepperZ.value = offsetZ
+        stepperPan.value = offsetPan
+        stepperTilt.value = offsetTilt
+        
+        valueLabelX.text = String(format: "%.1f", offsetX)
+        valueLabelY.text = String(format: "%.1f", offsetY)
+        valueLabelZ.text = String(format: "%.1f", offsetZ)
+        valueLabelPan.text = String(format: "%.1f", offsetPan)
+        valueLabelTilt.text = String(format: "%.1f", offsetTilt)
     }
     
     @IBAction func stepperValueChangedX(_ sender: UIStepper) {
@@ -78,7 +103,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         if gestureRecognizer.state == .ended {
             shootCatLaser()
             //hitTest()
-            //shootLaser()
+            shootLaser()
             //checkPoints()
         }
     }
