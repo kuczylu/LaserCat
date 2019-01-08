@@ -14,12 +14,13 @@ import AVFoundation
 
 class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
-    var offsetPositions = simd_double3(0.0, 0.0, 0.0)
-    var offsetAngles = simd_double3(0.0, 0.0, 0.0)
-    let cmToM = 0.01
-    let landscapeToPortrait = simd_double3x3(rows: [double3(0.0, -1.0, 0.0),
-                                                   double3(1.0, 0.0, 0.0),
-                                                   double3(0.0, 0.0, 1.0)]) // 90 degree rotation abt z
+    var offsetPositions = simd_float3(0.0, 0.0, 0.0)
+    var offsetAngles = simd_float3(0.0, 0.0, 0.0)
+    let cmToM : Float = 0.01
+    let valueLabelFormat = "%.1f"
+    let landscapeToPortrait = simd_float3x3(rows: [float3(0.0, -1.0, 0.0),
+                                                   float3(1.0, 0.0, 0.0),
+                                                   float3(0.0, 0.0, 1.0)]) // 90 degree rotation abt z
 
     @IBOutlet var sceneView: ARSCNView!
     @IBOutlet weak var sessionInfoView: UIVisualEffectView!
@@ -53,45 +54,45 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     @IBAction func clearButtonClicked() {
 
-        offsetPositions = simd_double3(0.0, 0.0, 0.0)
-        offsetAngles = simd_double3(0.0, 0.0, 0.0)
+        offsetPositions = simd_float3(0.0, 0.0, 0.0)
+        offsetAngles = simd_float3(0.0, 0.0, 0.0)
         
-        stepperX.value = offsetPositions.x
-        stepperY.value = offsetPositions.y
-        stepperZ.value = offsetPositions.z
-        stepperPan.value = offsetAngles.y
-        stepperTilt.value = offsetAngles.x
+        stepperX.value = Double(offsetPositions.x)
+        stepperY.value = Double(offsetPositions.y)
+        stepperZ.value = Double(offsetPositions.z)
+        stepperPan.value = Double(offsetAngles.y)
+        stepperTilt.value = Double(offsetAngles.x)
         
-        valueLabelX.text = String(format: "%.1f", offsetPositions.x)
-        valueLabelY.text = String(format: "%.1f", offsetPositions.y)
-        valueLabelZ.text = String(format: "%.1f", offsetPositions.z)
-        valueLabelPan.text = String(format: "%.1f", offsetAngles.y)
-        valueLabelTilt.text = String(format: "%.1f", offsetAngles.x)
+        valueLabelX.text = String(format: valueLabelFormat, offsetPositions.x)
+        valueLabelY.text = String(format: valueLabelFormat, offsetPositions.y)
+        valueLabelZ.text = String(format: valueLabelFormat, offsetPositions.z)
+        valueLabelPan.text = String(format: valueLabelFormat, offsetAngles.y)
+        valueLabelTilt.text = String(format: valueLabelFormat, offsetAngles.x)
     }
     
     @IBAction func stepperValueChangedX(_ sender: UIStepper) {
-        offsetPositions.x = sender.value
-        valueLabelX.text = String(format: "%.1f", offsetPositions.x)
+        offsetPositions.x = Float(sender.value)
+        valueLabelX.text = String(format: valueLabelFormat, offsetPositions.x)
     }
     
     @IBAction func stepperValueChangedY(_ sender: UIStepper) {
-        offsetPositions.y = sender.value
-        valueLabelY.text = String(format: "%.1f", offsetPositions.y)
+        offsetPositions.y = Float(sender.value)
+        valueLabelY.text = String(format: valueLabelFormat, offsetPositions.y)
     }
     
     @IBAction func stepperValueChangedZ(_ sender: UIStepper) {
-        offsetPositions.z = sender.value
-        valueLabelZ.text = String(format: "%.1f", offsetPositions.z)
+        offsetPositions.z = Float(sender.value)
+        valueLabelZ.text = String(format: valueLabelFormat, offsetPositions.z)
     }
     
     @IBAction func stepperValueChangedPan(_ sender: UIStepper) {
-        offsetAngles.y = sender.value
-        valueLabelPan.text = String(format: "%.1f", offsetAngles.y)
+        offsetAngles.y = Float(sender.value)
+        valueLabelPan.text = String(format: valueLabelFormat, offsetAngles.y)
     }
     
     @IBAction func stepperValueChangedTilt(_ sender: UIStepper) {
-        offsetAngles.x = sender.value
-        valueLabelTilt.text = String(format: "%.1f", offsetAngles.x)
+        offsetAngles.x = Float(sender.value)
+        valueLabelTilt.text = String(format: valueLabelFormat, offsetAngles.x)
     }
     
     @IBAction func tapView(_ gestureRecognizer : UITapGestureRecognizer) {
@@ -226,11 +227,11 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         // offset is specified in the device reference frame in centimeters
         // offset must be scaled and rotated into the world refrence frame before being added to the device position
-        let offset = simd_float(cmToM * landscapeToPortrait * offsetPositions)
+        let offset = cmToM * landscapeToPortrait * offsetPositions
         let laserPosition = devicePosition + deviceOrientation * offset
         
         // offset is specified in the device reference frame in degrees
-        let anglesOffset = simd_float(landscapeToPortrait.transpose * offsetAngles)
+        let anglesOffset = landscapeToPortrait.transpose * offsetAngles
         let offsetRotation = getMatrixFromAngles(anglesOffset, "YXZ")
         let laserOrientation = deviceOrientation * offsetRotation.transpose
         
@@ -263,11 +264,11 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         // offset is specified in the device reference frame in meters
         // offset must be rotated into the world refrence frame before being added to the device position
-        let offset = simd_float(cmToM * landscapeToPortrait * offsetPositions)
+        let offset = cmToM * landscapeToPortrait * offsetPositions
         let laserPosition = devicePosition + deviceOrientation * offset
         
         // offset is specified in the device reference frame in degrees
-        let anglesOffset = simd_float(landscapeToPortrait.transpose * offsetAngles)
+        let anglesOffset = landscapeToPortrait.transpose * offsetAngles
         let offsetRotation = getMatrixFromAngles(anglesOffset, "YXZ")
         let laserOrientation = deviceOrientation * offsetRotation.transpose
         
@@ -303,7 +304,8 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
             
             if(hasSurface) {
                 let node = CatNode()
-                node.transform = SCNMatrix4.init(self.getTransform(nodePosition, laserOrientation))
+                let nodeRotation = laserOrientation * self.landscapeToPortrait
+                node.transform = SCNMatrix4.init(self.getTransform(nodePosition, nodeRotation))
                 node.name = "cat"
                 self.sceneView.scene.rootNode.addChildNode(node)
             }
