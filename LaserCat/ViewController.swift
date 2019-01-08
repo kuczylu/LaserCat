@@ -211,7 +211,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
         
         // remove laser nodes
-        while let node = sceneView.scene.rootNode.childNode(withName: "laser", recursively: false) {
+        while let node = sceneView.scene.rootNode.childNode(withName: "cat", recursively: false) {
             node.removeFromParentNode()
         }
     }
