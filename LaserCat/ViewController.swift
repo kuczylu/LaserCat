@@ -18,6 +18,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     var offsetAngles = simd_float3(0.0, 0.0, 0.0)
     let cmToM : Float = 0.01
     let valueLabelFormat = "%.1f"
+    let angleOrder = "YXZ"
     let landscapeToPortrait = simd_float3x3(rows: [float3(0.0, -1.0, 0.0),
                                                    float3(1.0, 0.0, 0.0),
                                                    float3(0.0, 0.0, 1.0)]) // 90 degree rotation abt z
@@ -101,7 +102,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         if gestureRecognizer.state == .ended {
             shootCatLaser()
             //hitTest()
-            shootLaser()
+            //shootLaser()
             //checkPoints()
         }
     }
@@ -232,7 +233,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         // offset is specified in the device reference frame in degrees
         let anglesOffset = landscapeToPortrait.transpose * offsetAngles
-        let offsetRotation = getMatrixFromAngles(anglesOffset, "YXZ")
+        let offsetRotation = getMatrixFromAngles(anglesOffset, angleOrder)
         let laserOrientation = deviceOrientation * offsetRotation.transpose
         
         let laserFwd : simd_float3 = -laserOrientation.columns.2
@@ -269,44 +270,37 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         // offset is specified in the device reference frame in degrees
         let anglesOffset = landscapeToPortrait.transpose * offsetAngles
-        let offsetRotation = getMatrixFromAngles(anglesOffset, "YXZ")
+        let offsetRotation = getMatrixFromAngles(anglesOffset, angleOrder)
         let laserOrientation = deviceOrientation * offsetRotation.transpose
-        
         let laserOrientationInv = laserOrientation.transpose
         
-        //let laserFwd : simd_float3 = -laserOrientation.columns.2
         
         sceneView.session.getCurrentWorldMap { worldMap, error in
             guard let map = worldMap else { return }
             
-            let minimumRadius: Float = 0.02 // meters
-            var zMax: Float = 0.0
-            var nodePosition = simd_float3(0.0, 0.0, 0.0)
+            let hitRadiusMin: Float = 0.02 // meters
+            var laserDepthMax : Float = 0.0
             var hasSurface = false
-            var hitCount = 0
             
-            
-            for point in map.rawFeaturePoints.points {
-                let pointNew = laserOrientationInv * (point - laserPosition)
-                if (abs(pointNew.x) < minimumRadius) && (abs(pointNew.y) < minimumRadius)
+            for worldPoint in map.rawFeaturePoints.points {
+                let laserPoint = laserOrientationInv * (worldPoint - laserPosition)
+                if (abs(laserPoint.x) < hitRadiusMin) && (abs(laserPoint.y) < hitRadiusMin)
                 {
-                    if pointNew.z < zMax {
-                        zMax = pointNew.z
-                        nodePosition = point
+                    // more negative in z is deeper
+                    if laserPoint.z < laserDepthMax {
+                        laserDepthMax = laserPoint.z
                         hasSurface = true
                     }
-                    
-                    hitCount += 1
                 }
             }
             
-            print("hit count: ", hitCount)
-            
             if(hasSurface) {
-                let node = CatNode()
-                let nodeRotation = laserOrientation * self.landscapeToPortrait
-                node.transform = SCNMatrix4.init(self.getTransform(nodePosition, nodeRotation))
-                node.name = "cat"
+                let laserFwd = laserOrientation.columns.2
+                let catNodePosition = laserPosition + laserDepthMax * laserFwd
+                let catNodeRotation = laserOrientation * self.landscapeToPortrait
+                let catNodeTransform = SCNMatrix4.init(self.getTransform(catNodePosition, catNodeRotation))
+                
+                let node = CatNode(catNodeTransform, abs(laserDepthMax))
                 self.sceneView.scene.rootNode.addChildNode(node)
             }
         }
@@ -435,7 +429,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         }
     }
     
-    
+    /*
     private func hitTest() {
         guard let frame = sceneView.session.currentFrame else { return }
         
@@ -472,4 +466,5 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         sceneView.scene.rootNode.addChildNode(node)
     }
+ */
 }
