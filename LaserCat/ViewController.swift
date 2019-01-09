@@ -214,7 +214,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     private func updateSessionInfoLabel() {
         
-        let infoMessage = "Welcome to LaserCat! Shoot catlasers at surfaces by tapping anywhere. Lasers will shoot and cats will stick when they intersect an area with enough feature points (orange dots). If no laser shoots, find an area with more features! Change where the laser shoots from by clicking 'show values' and editing the offset values. The offset values are relative to the device camera. Delete cats and reset the tracking session by pressing 'reset'. Tap this message to return to LaserCat!"
+        let infoMessage = "Welcome to LaserCat! Shoot catlasers at surfaces by tapping anywhere. Lasers will shoot and cats will stick when they intersect an area with enough feature points (orange dots). If no laser shoots, find an area with more features, or move around to create more! Change where the laser shoots from by clicking 'show values' and editing the offset values. The offset values are relative to the device camera. Delete cats and reset the tracking session by pressing 'reset'. Tap this message to return to LaserCat!"
         
         if isShowingInfo {
             sessionInfoLabel.text = infoMessage
@@ -228,6 +228,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         isShowingInfo.toggle()
         updateSessionInfoLabel()
     }
+    
     
     private func resetTracking() {
         let configuration = ARWorldTrackingConfiguration()
@@ -246,21 +247,24 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         // get camera position and orientation w.r.t world coordinate system
         let transform = frame.camera.transform
-        let devicePosition = getPosition(transform)
-        let deviceOrientation = getRotation(transform)
+        let cameraPosition = getPosition(transform)
+        let cameraOrientation = getRotation(transform)
         
-        // offset is specified in the device reference frame in meters
-        // offset must be rotated into the world refrence frame before being added to the device position
+        // the laser position offset is specified in the device reference frame in centimeters
+        // offset must be scaled and rotated into the world reference frame
+        // before being added to the camera position
         let offset = cmToM * landscapeToPortrait * offsetPositions
-        let laserPosition = devicePosition + deviceOrientation * offset
+        let laserPosition = cameraPosition + cameraOrientation * offset
         
-        // offset is specified in the device reference frame in degrees
+        // the laser anglular offset is specified in the camera reference frame in degrees
+        // the offset is roatated into the world coordinate system
         let anglesOffset = landscapeToPortrait.transpose * offsetAngles
         let offsetRotation = getMatrixFromAngles(anglesOffset, angleOrder)
-        let laserOrientation = deviceOrientation * offsetRotation.transpose
+        let laserOrientation = cameraOrientation * offsetRotation.transpose
         let laserOrientationInv = laserOrientation.transpose
         
-        
+        // get the current map, and check the intersection of the laser's path with
+        // any map points with some tolerance 'hitRadiusMin'
         sceneView.session.getCurrentWorldMap { worldMap, error in
             guard let map = worldMap else { return }
             
@@ -269,10 +273,13 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
             var hasSurface = false
             
             for worldPoint in map.rawFeaturePoints.points {
+                
+                // rotate and translate world map point into laser reference frame
                 let laserPoint = laserOrientationInv * (worldPoint - laserPosition)
+                // check that the new point is within some tolerance of the laser's z (fwd) axis
                 if (abs(laserPoint.x) < hitRadiusMin) && (abs(laserPoint.y) < hitRadiusMin)
                 {
-                    // more negative in z is deeper
+                    // keep the deepest world point found, here more negative in z is deeper
                     if laserPoint.z < laserDepthMax {
                         laserDepthMax = laserPoint.z
                         hasSurface = true
@@ -280,6 +287,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
                 }
             }
             
+            // if a surface (feature point) is contacted, add a lasercat to the scene and play a sound
             if(hasSurface) {
                 let laserFwd = laserOrientation.columns.2
                 let catNodePosition = laserPosition + laserDepthMax * laserFwd
@@ -402,7 +410,6 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         transform.columns.2[0] = rotation.columns.2[0]
         transform.columns.2[1] = rotation.columns.2[1]
         transform.columns.2[2] = rotation.columns.2[2]
-
         
         transform.columns.3[0] = position.x
         transform.columns.3[1] = position.y
