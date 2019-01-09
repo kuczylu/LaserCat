@@ -1,6 +1,6 @@
 # LaserCat
 
-LaserCat is an AR app that allows users to visualize hypothetical laser-to-camera offsets by shooting 
+LaserCat is an AR iOS app that allows users to visualize hypothetical laser-to-camera offsets by shooting 
 virtual lasers that attach cats onto real world surfaces. 
 
 Users can adjust the x, y, z, pan, and tilt offsets of the virtual laser relative to the device camera and 
