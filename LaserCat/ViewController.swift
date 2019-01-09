@@ -17,6 +17,9 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     var audioPlayer : AVAudioPlayer?
     var offsetPositions = simd_float3(0.0, 0.0, 0.0)
     var offsetAngles = simd_float3(0.0, 0.0, 0.0)
+    var sessionStateMessage = "Initializing.. Tap here for info"
+    var isShowingInfo = false
+    
     let cmToM : Float = 0.01
     let valueLabelFormat = "%.1f"
     let angleOrder = "YXZ"
@@ -113,6 +116,10 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
             fatalError("ARKit is not supported on this device")
         }
         
+        // add tap capability to sessionInfoView
+        let gesture = UITapGestureRecognizer(target: self, action: #selector(sessionInfoViewClicked))
+        sessionInfoView.addGestureRecognizer(gesture)
+        
         // Set the view's delegate
         sceneView.delegate = self
         sceneView.debugOptions = [.showFeaturePoints]
@@ -145,18 +152,21 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         guard let frame = session.currentFrame else { return }
-        updateSessionInfoLabel(for: frame, trackingState: frame.camera.trackingState)
+        updateSessionState(for: frame, trackingState: frame.camera.trackingState)
+        updateSessionInfoLabel()
     }
     
     
     func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
         guard let frame = session.currentFrame else { return }
-        updateSessionInfoLabel(for: frame, trackingState: frame.camera.trackingState)
+        updateSessionState(for: frame, trackingState: frame.camera.trackingState)
+        updateSessionInfoLabel()
     }
     
     
     func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
-        updateSessionInfoLabel(for: session.currentFrame!, trackingState: camera.trackingState)
+        updateSessionState(for: session.currentFrame!, trackingState: camera.trackingState)
+        updateSessionInfoLabel()
     }
     
     
@@ -164,45 +174,60 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     
     func session(_ session: ARSession, didFailWithError error: Error) {
-        sessionInfoLabel.text = "Session failed: \(error.localizedDescription)"
+        sessionStateMessage = "Session failed: \(error.localizedDescription)"
+        updateSessionInfoLabel()
         resetTracking()
     }
     
     
     func sessionWasInterrupted(_ session: ARSession) {
-        sessionInfoLabel.text = "Session was interrupted"
+        sessionStateMessage = "Session was interrupted"
+        updateSessionInfoLabel()
     }
     
     
     func sessionInterruptionEnded(_ session: ARSession) {
-        sessionInfoLabel.text = "Session interruption ended"
+        sessionStateMessage = "Session interruption ended"
+        updateSessionInfoLabel()
         resetTracking()
     }
     
     
-    private func updateSessionInfoLabel(for frame: ARFrame, trackingState: ARCamera.TrackingState) {
-        
-        let message: String
+    private func updateSessionState(for frame: ARFrame, trackingState: ARCamera.TrackingState) {
         
         switch trackingState {
         case .normal where frame.anchors.isEmpty:
-            message = "Tap anywhere to lasercat!"
+            sessionStateMessage = "Tap anywhere to lasercat! Tap here for info."
         case .notAvailable:
-            message = "Tracking unavailable."
+            sessionStateMessage = "Tracking unavailable. Tap here for info."
         case .limited(.excessiveMotion):
-            message = "Tracking limited - Move device more slowly."
+            sessionStateMessage = "Tracking limited - Move device more slowly. Tap here for info."
         case .limited(.insufficientFeatures):
-            message = "Tracking limited - Point the device at an area with visible surface detail, or improve lighting conditions."
+            sessionStateMessage = "Tracking limited - Point the device at an area with visible surface detail, or improve lighting conditions. Tap here for info."
         case .limited(.initializing):
-            message = "Initializing AR session."
+            sessionStateMessage = "Initializing AR session. Tap here for info."
         default:
-            message = ""
+            sessionStateMessage = "Tap here for info."
         }
-        
-        sessionInfoLabel.text = message
-        sessionInfoView.isHidden = message.isEmpty
     }
 
+    
+    private func updateSessionInfoLabel() {
+        
+        let infoMessage = "Welcome to LaserCat! Shoot catlasers at surfaces by tapping anywhere. Cats will stick when they intersect an area with enough feature points (orange dots). Change where the laser shoots from by clicking 'show values' and editing the offset values. The offset values are relative to the device camera. Delete cats and reset the tracking session by pressing 'reset'. Tap this message to return to LaserCat!"
+        
+        if isShowingInfo {
+            sessionInfoLabel.text = infoMessage
+        } else {
+            sessionInfoLabel.text = sessionStateMessage
+        }
+    }
+    
+    
+    @objc private func sessionInfoViewClicked() {
+        isShowingInfo.toggle()
+        updateSessionInfoLabel()
+    }
     
     private func resetTracking() {
         let configuration = ARWorldTrackingConfiguration()
