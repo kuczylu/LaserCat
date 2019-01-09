@@ -116,7 +116,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
             fatalError("ARKit is not supported on this device")
         }
         
-        // add tap capability to sessionInfoView
+        // add tap geasture recognizer to sessionInfoView
         let gesture = UITapGestureRecognizer(target: self, action: #selector(sessionInfoViewClicked))
         sessionInfoView.addGestureRecognizer(gesture)
         
@@ -214,7 +214,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     private func updateSessionInfoLabel() {
         
-        let infoMessage = "Welcome to LaserCat! Shoot catlasers at surfaces by tapping anywhere. Cats will stick when they intersect an area with enough feature points (orange dots). Change where the laser shoots from by clicking 'show values' and editing the offset values. The offset values are relative to the device camera. Delete cats and reset the tracking session by pressing 'reset'. Tap this message to return to LaserCat!"
+        let infoMessage = "Welcome to LaserCat! Shoot catlasers at surfaces by tapping anywhere. Lasers will shoot and cats will stick when they intersect an area with enough feature points (orange dots). If no laser shoots, find an area with more features! Change where the laser shoots from by clicking 'show values' and editing the offset values. The offset values are relative to the device camera. Delete cats and reset the tracking session by pressing 'reset'. Tap this message to return to LaserCat!"
         
         if isShowingInfo {
             sessionInfoLabel.text = infoMessage
@@ -288,20 +288,24 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
                 
                 let node = CatNode(catNodeTransform, abs(laserDepthMax))
                 self.sceneView.scene.rootNode.addChildNode(node)
-                
-                self.playCatSound()
+                self.playSoundFile(self.getCatSoundResource())
             }
         }
     }
     
     
-    private func playCatSound() {
-        
+    private func getCatSoundResource() -> String {
         let index = Int.random(in: 1...5)
         let resourceStr = "Sounds/catNoise" + String(index) + ".m4a"
         
-        guard let path = Bundle.main.path(forResource: resourceStr, ofType: nil) else {
-            print("Error creating sound file path for ", resourceStr)
+        return resourceStr
+    }
+    
+    
+    private func playSoundFile(_ resource: String) {
+        
+        guard let path = Bundle.main.path(forResource: resource, ofType: nil) else {
+            print("Error creating sound file path for ", resource)
             return
         }
         
