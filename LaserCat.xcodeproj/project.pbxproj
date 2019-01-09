@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		6C1A3D3F21E2A4720033AD31 /* Assets.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = 6C1A3D3E21E2A4720033AD31 /* Assets.scnassets */; };
 		6C1A3D4121E2A7270033AD31 /* CatNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1A3D4021E2A7270033AD31 /* CatNode.swift */; };
+		6C9F21F721E57971006CB638 /* Sounds in Resources */ = {isa = PBXBuildFile; fileRef = 6C9F21F621E57971006CB638 /* Sounds */; };
 		6CAEB09321E403E800CC2491 /* IBExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAEB09221E403E800CC2491 /* IBExtensions.swift */; };
 		6CB06ABF21DE903F003F1D8A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB06ABE21DE903F003F1D8A /* AppDelegate.swift */; };
 		6CB06AC321DE903F003F1D8A /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB06AC221DE903F003F1D8A /* ViewController.swift */; };
@@ -20,6 +21,7 @@
 /* Begin PBXFileReference section */
 		6C1A3D3E21E2A4720033AD31 /* Assets.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = Assets.scnassets; sourceTree = "<group>"; };
 		6C1A3D4021E2A7270033AD31 /* CatNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatNode.swift; sourceTree = "<group>"; };
+		6C9F21F621E57971006CB638 /* Sounds */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Sounds; sourceTree = "<group>"; };
 		6CAEB09221E403E800CC2491 /* IBExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IBExtensions.swift; sourceTree = "<group>"; };
 		6CB06ABB21DE903F003F1D8A /* LaserCat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LaserCat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6CB06ABE21DE903F003F1D8A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -65,6 +67,7 @@
 				6C1A3D4021E2A7270033AD31 /* CatNode.swift */,
 				6CB06AC421DE903F003F1D8A /* Main.storyboard */,
 				6CAEB09221E403E800CC2491 /* IBExtensions.swift */,
+				6C9F21F621E57971006CB638 /* Sounds */,
 				6CB06AC721DE9040003F1D8A /* Assets.xcassets */,
 				6CB06AC921DE9040003F1D8A /* LaunchScreen.storyboard */,
 				6CB06ACC21DE9040003F1D8A /* Info.plist */,
@@ -131,6 +134,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6C9F21F721E57971006CB638 /* Sounds in Resources */,
 				6C1A3D3F21E2A4720033AD31 /* Assets.scnassets in Resources */,
 				6CB06ACB21DE9040003F1D8A /* LaunchScreen.storyboard in Resources */,
 				6CB06AC821DE9040003F1D8A /* Assets.xcassets in Resources */,

@@ -14,6 +14,7 @@ import AVFoundation
 
 class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
+    var audioPlayer : AVAudioPlayer?
     var offsetPositions = simd_float3(0.0, 0.0, 0.0)
     var offsetAngles = simd_float3(0.0, 0.0, 0.0)
     let cmToM : Float = 0.01
@@ -101,11 +102,9 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         if gestureRecognizer.state == .ended {
             shootCatLaser()
-            //hitTest()
-            //shootLaser()
-            //checkPoints()
         }
     }
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -116,8 +115,9 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         // Set the view's delegate
         sceneView.delegate = self
-        sceneView.debugOptions = [.showFeaturePoints, .showWorldOrigin]
+        sceneView.debugOptions = [.showFeaturePoints]
     }
+    
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -131,6 +131,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         UIApplication.shared.isIdleTimerDisabled = true
     }
     
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         
@@ -140,6 +141,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
 
     // MARK: - ARSessionDelegate
+    
     
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         guard let frame = session.currentFrame else { return }
@@ -158,12 +160,8 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     }
     
     
-    func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        
-    }
-    
-    
     // MARK: ARSessionObserver
+    
     
     func session(_ session: ARSession, didFailWithError error: Error) {
         sessionInfoLabel.text = "Session failed: \(error.localizedDescription)"
@@ -210,47 +208,10 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         let configuration = ARWorldTrackingConfiguration()
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
         
-        // remove laser nodes
+        // remove cat nodes
         while let node = sceneView.scene.rootNode.childNode(withName: "cat", recursively: false) {
             node.removeFromParentNode()
         }
-    }
-    
-    
-    private func shootLaser() {
-        
-        guard let frame = sceneView.session.currentFrame else { return }
-
-        // get camera position and orientation w.r.t world coordinate system
-        let transform = frame.camera.transform
-        let devicePosition = getPosition(transform)
-        let deviceOrientation = getRotation(transform)
-        
-        // offset is specified in the device reference frame in centimeters
-        // offset must be scaled and rotated into the world refrence frame before being added to the device position
-        let offset = cmToM * landscapeToPortrait * offsetPositions
-        let laserPosition = devicePosition + deviceOrientation * offset
-        
-        // offset is specified in the device reference frame in degrees
-        let anglesOffset = landscapeToPortrait.transpose * offsetAngles
-        let offsetRotation = getMatrixFromAngles(anglesOffset, angleOrder)
-        let laserOrientation = deviceOrientation * offsetRotation.transpose
-        
-        let laserFwd : simd_float3 = -laserOrientation.columns.2
-        let laserLength : Float = 2.0 //meters
-        let laserMidPoint = laserPosition + (laserLength / 2.0) * laserFwd
-        
-        
-        let cylinder = SCNCylinder(radius: 0.01, height: CGFloat(laserLength))
-        cylinder.radialSegmentCount = 8
-        let node = SCNNode(geometry: cylinder)
-        let nodeRotation = simd_float3x3(columns: (laserOrientation.columns.1, laserOrientation.columns.2, laserOrientation.columns.0)) // change this to be more transparent
-        node.transform = SCNMatrix4.init(getTransform(laserMidPoint, nodeRotation))
-        node.name = "laser"
-        
-        sceneView.scene.rootNode.addChildNode(node)
-        //let systemSoundID: SystemSoundID = 1016
-        //AudioServicesPlaySystemSound(systemSoundID)
     }
     
     
@@ -302,12 +263,35 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
                 
                 let node = CatNode(catNodeTransform, abs(laserDepthMax))
                 self.sceneView.scene.rootNode.addChildNode(node)
+                
+                self.playCatSound()
             }
         }
-        
-        //let systemSoundID: SystemSoundID = 1016
-        //AudioServicesPlaySystemSound(systemSoundID)
     }
+    
+    
+    private func playCatSound() {
+        
+        let index = Int.random(in: 1...5)
+        let resourceStr = "Sounds/catNoise" + String(index) + ".m4a"
+        
+        guard let path = Bundle.main.path(forResource: resourceStr, ofType: nil) else {
+            print("Error creating sound file path for ", resourceStr)
+            return
+        }
+        
+        let url = URL(fileURLWithPath: path)
+        
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.play()
+        } catch {
+            print("Unable to load sound file: ", url)
+        }
+    }
+    
+    
+    // Utilities
     
     
     private func getRotation(_ transform: simd_float4x4) -> simd_float3x3 {
@@ -397,74 +381,4 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         return transform
     }
-    
-    
-    private func checkPoints() {
-        guard let frame = sceneView.session.currentFrame else { return }
-        
-        guard let rawPoints = frame.rawFeaturePoints else { return }
-        
-        print("Points Count: ", rawPoints.points.count)
-        
-        var status = ""
-        switch frame.worldMappingStatus {
-        case .notAvailable:
-            status = "not available"
-        case .limited:
-            status = "limited"
-        case .extending:
-            status = "extending"
-        case .mapped:
-            status = "mapped"
-        default:
-            status = "unknown"
-        }
-        
-        print("World mapping status is ", status)
-        
-        sceneView.session.getCurrentWorldMap { worldMap, error in
-            guard let map = worldMap else { return }
-            
-            print("Total Points: ", map.rawFeaturePoints.points.count)
-        }
-    }
-    
-    /*
-    private func hitTest() {
-        guard let frame = sceneView.session.currentFrame else { return }
-        
-        let result = frame.hitTest(CGPoint(x: 0.5, y: 0.5), types: [.featurePoint, .estimatedHorizontalPlane, .estimatedHorizontalPlane])
-        
-        print("HIT TEST:")
-        guard let firstResult = result.first else {
-            print("### NO RESULT")
-            return
-        }
-
-        var type = ""
-        switch firstResult.type {
-        case .featurePoint:
-            type = "feature point"
-        case .estimatedHorizontalPlane:
-            type = "estimated horizontal plane"
-        case .estimatedVerticalPlane:
-            type = "estimated vertical plane"
-        default:
-            type = "no type info"
-        }
-        
-        print("    distance: ", firstResult.distance)
-        print("        type: ", type)
-        
-        let transform = frame.camera.transform
-        let nodeRotation = getRotation(transform) // change this to be more transparent
-        let nodePosition = getPosition(firstResult.worldTransform)
-        
-        let node = CatNode()
-        node.transform = SCNMatrix4.init(getTransform(nodePosition, nodeRotation))
-        node.name = "cat"
-        
-        sceneView.scene.rootNode.addChildNode(node)
-    }
- */
 }
