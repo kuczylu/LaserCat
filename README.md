@@ -1,18 +1,30 @@
 # LaserCat
 
-LaserCat is an AR iOS app that allows users to visualize hypothetical laser-to-camera offsets by shooting 
-virtual lasers that attach cats onto real world surfaces. 
+Check out the video demo in the Repo: LasarCatDemo
+
+LaserCat is an iOS app that was designed to function as both standalone product, and as a stepping stone 
+toward the larger goal of developing portable lasers that can attach to iPhones, and enhance Augmented
+Reality experiences.
+
+In order to use a laser in AR, it's position and orientation relative to the iPhone camera must be determined,
+described here as laser-to-camera calibration.
+
+LaserCat executes an important step in the larger goal of laser-to-iPhone integration, by validating hypothetical 
+laser-to-camera calibrations. 
+
+LaserCat does this by showing the real-time effects of various laser-to-camera position and rotation offsets,
+thereby allowing users to ensure they have the correct understanding of how to apply the offsets. 
 
 Users can adjust the x, y, z, pan, and tilt offsets of the virtual laser relative to the device camera and 
-see the resulting effects.
+see the resulting effects. Note, only 5 degrees of freedom are necessary to completely specify the calibration,
+since a roll offset has no effect, due to the cylindrical symmetry of the laser.
 
-One neat feature is the off principal axis hit testing done by the 'laser'.
+Why cats?
 
-This is a very primative form of collision detection bewteen virtual objects and real surfaces. 
+While the mathematics involved, and the off-axis hit testing of real-world objects grabs many users' attention,
+it has been found through testing that engagement with the app increases when the lasers feature cats, and cat noises.
 
-Currently, the collision detection is very basic and inefficient.  
-
-It simply checks if any of the world map points are contained within the bounding cylinder (hit box) of the laser. 
+Furture work for this app:
 
 One possible extension for this app would be to create a smarter way to do collision detection,
 perhaps masking points that will have no chance of causing a collision, or a smarter search algorithm. 
