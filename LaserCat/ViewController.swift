@@ -5,6 +5,8 @@
 //  Created by Lukas Kuczynski on 1/3/19.
 //  Copyright © 2019 Lukas Kuczynski. All rights reserved.
 //
+//  This is the main file for LaserCat. ViewController handles the AR methods, and state of the application
+//  variables. ViewController tracks changes in the interface and updates the data model accordingly.
 
 import UIKit
 import SceneKit
@@ -13,6 +15,8 @@ import AVFoundation
 
 
 class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
+    
+    // MARK: - Variables
     
     var audioPlayer : AVAudioPlayer?
     var offsetPositions = simd_float3(0.0, 0.0, 0.0)
@@ -42,6 +46,8 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     @IBOutlet weak var stepperPan: UIStepper!
     @IBOutlet weak var stepperTilt: UIStepper!
     
+    
+    // MARK: - Interface Methods
     
     @IBAction func toggleValuesButtonClicked(_ sender: UIButton) {
         valuesView.isHidden.toggle()
@@ -109,6 +115,8 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     }
     
     
+    // MARK: - View state methods
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -149,7 +157,6 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
 
     // MARK: - ARSessionDelegate
     
-    
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         guard let frame = session.currentFrame else { return }
         updateSessionState(for: frame, trackingState: frame.camera.trackingState)
@@ -171,7 +178,6 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     
     // MARK: ARSessionObserver
-    
     
     func session(_ session: ARSession, didFailWithError error: Error) {
         sessionStateMessage = "Session failed: \(error.localizedDescription)"
@@ -332,6 +338,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     
     private func getRotation(_ transform: simd_float4x4) -> simd_float3x3 {
+        // returns the associated 3x3 rotation matrix from a 4x4 transfrom matrix
         let rotRow0 = simd_float3(x: transform.columns.0[0], y: transform.columns.1[0], z: transform.columns.2[0])
         let rotRow1 = simd_float3(x: transform.columns.0[1], y: transform.columns.1[1], z: transform.columns.2[1])
         let rotRow2 = simd_float3(x: transform.columns.0[2], y: transform.columns.1[2], z: transform.columns.2[2])
@@ -342,6 +349,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     
     private func getPosition(_ transform: simd_float4x4) -> simd_float3 {
+        // returns the 3x1 position vector from a 4x4 transfrom matrix
         let position = simd_float3(x: transform.columns.3[0], y: transform.columns.3[1], z: transform.columns.3[2])
         
         return position
@@ -349,7 +357,9 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     
     private func getMatrixFromAngles(_ angles: simd_float3, _ order: String) -> simd_float3x3 {
-        
+        // returns the 3x3 rotation matrix specified by the 3 input angles in degrees,
+        // and the order of application of the angles. Angles must be in the format:
+        // (rot about x, rot about y, rot about z)
         var matrix = simd_float3x3(1.0)
         let anglesRad = degToRad(angles)
         
@@ -397,6 +407,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     
     private func getTransform(_ position: simd_float3, _ rotation: simd_float3x3) -> simd_float4x4 {
+        // returns a 4x4 transform matrix given a 3x1 position vector and a 3x3 rotation matrix
         var transform = simd_float4x4(1.0)
         
         transform.columns.0[0] = rotation.columns.0[0]
