@@ -1,6 +1,6 @@
 # LaserCat
 
-Check out the video demo in the Repo: LasarCatDemo
+Check out the video demo: https://youtu.be/l4PK-tG-OgQ
 
 LaserCat is an iOS app that was designed to function as both standalone product, and as a stepping stone 
 toward the larger goal of developing portable lasers that can attach to iPhones, and enhance Augmented
